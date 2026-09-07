@@ -1,0 +1,241 @@
+@import "tailwindcss";
+
+@theme {
+  /*
+   * As cores da marca não moram aqui: cada sabor injeta a própria paleta
+   * como variáveis CSS no <main> (ver `lib/theme.ts`). O que fica global
+   * é só o que não muda com o bolo — a tipografia.
+   */
+  --font-display: var(--font-playfair), "Playfair Display", Georgia, serif;
+  --font-sans: var(--font-jost), "Jost", "Futura", sans-serif;
+}
+
+/*
+ * Medidas da composição.
+ *
+ * O bolo mora à esquerda e o texto à direita. Sombra, halo e a palavra
+ * gigante derivam de `--cake-x` / `--cake-y` por calc(), então reposicionar
+ * a cena inteira num breakpoint é mexer nestas linhas e mais nada.
+ */
+:root {
+  --cake-x: 29%;
+  --cake-y: 50%;
+  /* O `min()` com vh evita o bolo estourar a altura em telas baixas
+     ou muito largas — a caixa nunca passa da tela. */
+  --cake-w: min(34vw, 62vh);
+  --cake-glow: 50vw;
+
+  /*
+   * Para onde o bolo caminha quando a roda vai até o fim: ele desce,
+   * encolhe e estaciona centralizado embaixo do texto revelado.
+   * O deslocamento é relativo — `--cake-x` + `--cake-travel-x` é o destino.
+   */
+  --cake-travel-x: -9vw; /* 29% → 20% da largura */
+  --cake-travel-y: 0vh; /* fica na mesma altura: 50% */
+  --cake-shrink: 0.58; /* escala final = 1 − 0.58 */
+
+  /* Nome do sabor, gigante, atrás do bolo */
+  --word-size: clamp(48px, 7.6vw, 132px);
+  /* Nome do bolo, na coluna da direita */
+  --h1-size: clamp(34px, 3.4vw, 52px);
+  /* Altura reservada ao texto que troca, para os botões não pularem */
+  --copy-min-h: 300px;
+}
+
+/* Notebooks menores: o bolo cresce e caminha para o centro */
+@media (max-width: 1180px) {
+  :root {
+    --cake-x: 31%;
+    --cake-w: min(40vw, 60vh);
+    --cake-glow: 60vw;
+    --cake-travel-x: -11vw; /* 31% → 20% */
+  }
+}
+
+/* Retrato: composição vertical — texto em cima, bolo apoiado embaixo.
+   O corte acompanha o breakpoint `lg` do Tailwind, usado no layout. */
+@media (max-width: 1023.98px) {
+  :root {
+    --cake-x: 50%;
+    --cake-y: 78%;
+    --cake-w: min(72vw, 46vh);
+    --cake-glow: 104vw;
+    /* No retrato o bolo já está centrado: ele só desce um pouco e encolhe,
+       parando embaixo do texto que sobe. */
+    --cake-travel-x: 0vw;
+    --cake-travel-y: 6vh;
+    --word-size: clamp(44px, 13vw, 92px);
+    --h1-size: clamp(26px, 4.6vw, 40px);
+    --copy-min-h: 200px;
+  }
+}
+
+/*
+ * Retrato baixo — iPhone SE e afins, ou qualquer telefone onde a barra do
+ * navegador come a altura. Sem isto o bolo sobe por cima dos botões.
+ *
+ * O que cede: o bolo encolhe e desce, o título diminui, os botões cabem
+ * numa linha só e o texto de apoio dos três itens da segunda cena sai
+ * (só lá — na primeira cena a descrição do bolo continua, porque cabe).
+ */
+@media (max-width: 1023.98px) and (max-height: 760px) {
+  :root {
+    --cake-w: min(60vw, 32vh);
+    --cake-y: 85%;
+    --copy-min-h: 120px;
+    --h1-size: clamp(24px, 4.2vw, 34px);
+  }
+
+  .short-hide {
+    display: none;
+  }
+
+  /* Os dois botões numa linha só: empilhados, custam 55px que não sobram. */
+  .cta-pill {
+    padding-inline: 1.15rem;
+    padding-block: 0.7rem;
+    font-size: 11px;
+    letter-spacing: 0.1em;
+  }
+}
+
+html,
+body {
+  height: 100%;
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
+body {
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+::selection {
+  background: var(--accent, #d86b7e);
+  color: var(--btn-ink, #f8f4ef);
+}
+
+/*
+ * Grão de filme. `/grain.png` não existe no projeto, então a textura é
+ * gerada por feTurbulence em SVG inline — mesmo efeito, zero requisição.
+ */
+.grain-overlay {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='240' height='240' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 240px 240px;
+}
+
+/*
+ * ── Animações de repouso ────────────────────────────────────────────────
+ *
+ * Bolo, enfeites e poeira ficam em loop o tempo todo. Como CSS, rodam no
+ * compositor e custam zero JavaScript por quadro; o Framer Motion cuida do
+ * que precisa de estado — parallax do mouse, roda, entrada e troca de
+ * sabor. Cada elemento traz seu `--rot`, `--dur` e `--delay` próprios,
+ * então nada anda sincronizado.
+ */
+@keyframes cake-float {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+  50% {
+    transform: translate3d(0, -12px, 0);
+  }
+}
+
+@keyframes cake-shadow {
+  0%,
+  100% {
+    transform: scaleX(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scaleX(0.94);
+    opacity: 0.78;
+  }
+}
+
+@keyframes piece-float {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) rotate(var(--rot));
+  }
+  25% {
+    transform: translate3d(0, -14px, 0) rotate(calc(var(--rot) + 8deg));
+  }
+  75% {
+    transform: translate3d(0, 14px, 0) rotate(calc(var(--rot) - 8deg));
+  }
+}
+
+@keyframes speck-drift {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+    opacity: var(--o);
+  }
+  50% {
+    transform: translate3d(var(--sway), var(--drift), 0);
+    opacity: calc(var(--o) * 2.2);
+  }
+}
+
+@keyframes hint-drop {
+  0%,
+  70%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.35;
+  }
+  35% {
+    transform: translateY(10px);
+    opacity: 1;
+  }
+}
+
+/*
+ * A viagem do bolo até o ponto de descanso.
+ *
+ * O progresso da roda entra como a variável `--p` (o Framer Motion escreve
+ * a MotionValue direto nela) e o CSS faz a conta. Assim o destino de cada
+ * breakpoint mora junto das outras medidas da composição, em vez de virar
+ * pixel calculado no JavaScript.
+ */
+.cake-travel {
+  transform: translate(
+      calc(var(--cake-travel-x) * var(--p, 0)),
+      calc(var(--cake-travel-y) * var(--p, 0))
+    )
+    scale(calc(1 - var(--cake-shrink) * var(--p, 0)));
+  will-change: transform;
+}
+
+.anim {
+  animation-duration: var(--dur);
+  animation-delay: var(--delay, 0s);
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite;
+  will-change: transform;
+}
+
+/* Halo quente que corre pela superfície do botão primário no hover */
+@keyframes sheen {
+  from {
+    transform: translateX(-140%) skewX(-18deg);
+  }
+  to {
+    transform: translateX(240%) skewX(-18deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}
