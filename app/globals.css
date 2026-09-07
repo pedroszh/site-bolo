@@ -99,11 +99,24 @@
   }
 }
 
-html,
+/*
+ * A página rola de verdade desde que existe o cardápio abaixo do hero.
+ * O hero continua ocupando a tela inteira: ele é `sticky` dentro de uma
+ * pista de 200vh, então fica preso enquanto a cena dele acontece e solta
+ * a rolagem quando termina.
+ */
+html {
+  scroll-behavior: smooth;
+}
+
 body {
-  height: 100%;
-  overflow: hidden;
-  overscroll-behavior: none;
+  overscroll-behavior-y: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
 }
 
 body {
@@ -115,6 +128,21 @@ body {
 ::selection {
   background: var(--accent, #d86b7e);
   color: var(--btn-ink, #f8f4ef);
+}
+
+/*
+ * Cardápio: paleta fixa, fora do rodízio de sabores.
+ *
+ * O hero troca de cor a cada seis segundos; uma lista de preços piscando
+ * junto seria cansativa de ler. O corte de cor entre as duas seções também
+ * marca que ali começa outro assunto.
+ */
+.menu-section {
+  --menu-bg: #f8f4ef;
+  --menu-ink: #2a1a16;
+  --menu-ink-soft: rgba(42, 26, 22, 0.62);
+  --menu-line: rgba(106, 71, 65, 0.2);
+  --menu-accent: #6a4741;
 }
 
 /*

@@ -11,6 +11,9 @@ Três sabores em cena hoje: **morango** (rosé claro), **pistache** (verde
 oliva) e **chocolate** (marrom quente). A ordem alterna o campo claro com
 os escuros, então cada troca muda de fato o clima da tela.
 
+Abaixo do hero vem o **cardápio**, com paleta fixa — ele não entra no
+rodízio de cores.
+
 ```bash
 npm install
 npm run dev      # http://localhost:3000
@@ -49,7 +52,9 @@ e mais baixo que os demais.
 | Fundo, luz, madeira, vinheta, o wipe | `components/BackgroundGlow.tsx` |
 | Palavra gigante atrás do bolo | `components/ThemeWord.tsx` + `--word-size` |
 | Coluna de texto da direita | `components/CakeCopy.tsx` |
-| Texto que a roda revela | `data/reveal.ts` |
+| Texto que a rolagem revela | `data/reveal.ts` |
+| Itens, preços e textos do cardápio | `data/menu.ts` |
+| Cores do cardápio | `.menu-section` em `app/globals.css` |
 | Botões | `components/CTAButtons.tsx` |
 
 ## Como a troca de sabor funciona
@@ -92,12 +97,13 @@ O mouse vira duas `MotionValue` normalizadas de `-1` a `1`, suavizadas por
 | Bolo | ±18 px |
 | Halo de luz | ±26 px |
 
-### A roda revela uma segunda cena
+### O hero é preso, e a rolagem move a cena
 
-**A roda do mouse não rola a página** — a tela é fixa. Ela empurra a
-composição, e o curso tem duas pontas:
+O hero é `sticky` dentro de uma pista de 200vh: enquanto os primeiros
+100vh passam, ele fica preso na tela e `useScroll` devolve um progresso de
+0 a 1. Terminado o curso, a rolagem segue para o cardápio sem sobressalto.
 
-| A roda vai de 0 a 1 e… | |
+| O progresso vai de 0 a 1 e… | |
 | --- | --- |
 | o bolo | caminha até `--cake-travel-*`, encolhe para ~42% e **estaciona** centrado na faixa livre à esquerda do texto |
 | os enfeites | descem proporcional ao `depth` — os da frente muito mais |
@@ -106,8 +112,12 @@ composição, e o curso tem duas pontas:
 | o texto de `data/reveal.ts` | sobe do rodapé e entra, item por item |
 
 Um cruza com o outro: enquanto o bolo desce, o texto sobe. Rolar de volta
-traz tudo ao mesmo lugar, pela mesma spring. No toque, arrastar para cima
-faz o mesmo. O curso todo leva 900 px de roda (`SCROLL_RANGE`).
+traz tudo ao mesmo lugar, pela mesma spring.
+
+Antes disto o hero sequestrava o evento `wheel` e a página não rolava. Com
+conteúdo abaixo, rolagem de mentira atrapalharia: a versão atual respeita o
+gesto do navegador, funciona no toque sem código extra e não briga com a
+barra de rolagem.
 
 O destino do bolo é relativo e mora em `app/globals.css`, junto das outras
 medidas: `--cake-x` + `--cake-travel-x` é onde ele para. O progresso da roda
@@ -135,6 +145,23 @@ está o custo:
   redesenhar a cada quadro. As sombras grandes são gradientes.
 - O parallax lê o ponteiro **uma vez por quadro** (`requestAnimationFrame`)
   e é desligado por completo em telas de toque, que não têm cursor.
+
+## Cardápio
+
+Uma seção comum, abaixo do hero — sem foto por enquanto, com a tipografia
+carregando: o nome do bolo puxa a linha, o pontilhado leva o olho até o
+preço, do jeito que cardápio impresso faz há um século. Duas colunas no
+desktop, uma no celular.
+
+É um Server Component: nada ali precisa de estado nem de animação.
+
+A paleta é **fixa** (`.menu-section`, em `app/globals.css`) e de propósito:
+o hero troca de cor a cada seis segundos, e uma lista de preços piscando
+junto seria cansativa de ler. O corte de cor entre as duas seções também
+marca que ali começa outro assunto.
+
+> **Os preços em `data/menu.ts` são de exemplo.** Troque pelos reais antes
+> de publicar.
 
 ## Sobre os assets
 

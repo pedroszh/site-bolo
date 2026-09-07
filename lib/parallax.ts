@@ -13,15 +13,17 @@ export const spring = {
   bounce: 0.24,
 } as const;
 
-/** Distância de roda acumulada, em px, que leva a cena ao fim do movimento. */
-export const SCROLL_RANGE = 900;
-
 export type PointerContextValue = {
   /** posição horizontal do mouse, normalizada de -1 (esquerda) a 1 (direita) */
   x: MotionValue<number>;
   /** posição vertical do mouse, normalizada de -1 (topo) a 1 (base) */
   y: MotionValue<number>;
-  /** progresso da roda do mouse, de 0 (repouso) a 1 (fim do curso) */
+  /**
+   * Progresso da cena do hero, de 0 (repouso) a 1 (fim).
+   *
+   * Vem da rolagem real da página: o hero é `sticky` dentro de uma pista
+   * de 200vh, e este valor é o quanto dessa pista já passou.
+   */
   scroll: MotionValue<number>;
   /** true quando o usuário pediu menos movimento no sistema */
   reduced: boolean;

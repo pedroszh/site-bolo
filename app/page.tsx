@@ -4,11 +4,12 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   motion,
   useMotionValue,
+  useScroll,
   useSpring,
   useTransform,
   useReducedMotion,
 } from "framer-motion";
-import { PointerContext, spring, SCROLL_RANGE } from "@/lib/parallax";
+import { PointerContext, spring } from "@/lib/parallax";
 import { ThemeContext, paletteVars } from "@/lib/theme";
 import { themes, THEME_INTERVAL } from "@/data/themes";
 import BackgroundGlow from "@/components/BackgroundGlow";
@@ -19,8 +20,7 @@ import CakeCopy from "@/components/CakeCopy";
 import DustMotes from "@/components/DustMotes";
 import ScrollHint from "@/components/ScrollHint";
 import ScrollReveal from "@/components/ScrollReveal";
-
-const clamp = (v: number) => (v < 0 ? 0 : v > 1 ? 1 : v);
+import MenuSection from "@/components/MenuSection";
 
 export default function Home() {
   const reduced = useReducedMotion() ?? false;
@@ -32,7 +32,9 @@ export default function Home() {
   */
   const [slide, setSlide] = useState({ current: 0, previous: 0 });
   const go = useCallback((next: number) => {
-    setSlide((s) => (s.current === next ? s : { current: next, previous: s.current }));
+    setSlide((s) =>
+      s.current === next ? s : { current: next, previous: s.current },
+    );
   }, []);
 
   // Um clique no seletor reinicia a contagem: ninguém quer escolher um
@@ -68,22 +70,39 @@ export default function Home() {
     [slide, goManual],
   );
 
+  /*
+    A cena do hero é movida pela rolagem de verdade.
+
+    A pista abaixo tem 200vh e o hero é `sticky` dentro dela: enquanto os
+    primeiros 100vh passam, o hero fica preso na tela e `scrollYProgress`
+    vai de 0 a 1 — o bolo desce e estaciona, o texto da segunda cena sobe.
+    Terminado o curso, a rolagem segue para o cardápio sem sobressalto.
+
+    Antes isto era feito sequestrando o evento `wheel`. Com a página tendo
+    conteúdo abaixo, rolagem de mentira atrapalharia: esta versão respeita
+    o gesto do navegador, funciona no toque sem código extra e não briga
+    com a barra de rolagem.
+  */
+  const heroTrack = useRef<HTMLDivElement>(null);
+  const { scrollYProgress } = useScroll({
+    target: heroTrack,
+    offset: ["start start", "end end"],
+  });
+  const scroll = useSpring(scrollYProgress, spring);
+
   // Posição bruta do mouse, normalizada de -1 a 1 nos dois eixos.
   const rawX = useMotionValue(0);
   const rawY = useMotionValue(0);
-  // Progresso da roda, de 0 a 1. A tela não rola: a roda vira estado da cena.
-  const rawScroll = useMotionValue(0);
 
-  // Uma única spring alimenta a página inteira: mesma inércia em tudo.
+  // A mesma spring alimenta a página inteira: mesma inércia em tudo.
   const x = useSpring(rawX, spring);
   const y = useSpring(rawY, spring);
-  const scroll = useSpring(rawScroll, spring);
 
   useEffect(() => {
     if (reduced) return;
 
     // Telas de toque não têm cursor: o parallax de mouse só pesaria à toa.
-    const fine = window.matchMedia("(pointer: fine)").matches;
+    if (!window.matchMedia("(pointer: fine)").matches) return;
 
     let frame = 0;
     let nextX = 0;
@@ -109,54 +128,20 @@ export default function Home() {
       if (!frame) frame = requestAnimationFrame(flush);
     };
 
-    /*
-      A tela é fixa em 100vh, então a roda não rola nada — ela empurra a
-      composição. Rolar para baixo faz o bolo descer; rolar de volta o traz
-      ao mesmo lugar, sempre pela mesma spring.
-    */
-    const onWheel = (e: WheelEvent) => {
-      rawScroll.set(clamp(rawScroll.get() + e.deltaY / SCROLL_RANGE));
-    };
-
-    // Mesma ideia no toque: arrastar para cima afunda o bolo.
-    let touchY: number | null = null;
-    const onTouchStart = (e: TouchEvent) => {
-      touchY = e.touches[0]?.clientY ?? null;
-    };
-    const onTouchMove = (e: TouchEvent) => {
-      const current = e.touches[0]?.clientY;
-      if (touchY === null || current === undefined) return;
-      rawScroll.set(clamp(rawScroll.get() + (touchY - current) / SCROLL_RANGE));
-      touchY = current;
-    };
-    const onTouchEnd = () => {
-      touchY = null;
-    };
-
-    if (fine) {
-      window.addEventListener("pointermove", onMove, { passive: true });
-      document.addEventListener("pointerleave", onLeave);
-    }
-    window.addEventListener("wheel", onWheel, { passive: true });
-    window.addEventListener("touchstart", onTouchStart, { passive: true });
-    window.addEventListener("touchmove", onTouchMove, { passive: true });
-    window.addEventListener("touchend", onTouchEnd, { passive: true });
+    window.addEventListener("pointermove", onMove, { passive: true });
+    document.addEventListener("pointerleave", onLeave);
 
     return () => {
       if (frame) cancelAnimationFrame(frame);
       window.removeEventListener("pointermove", onMove);
       document.removeEventListener("pointerleave", onLeave);
-      window.removeEventListener("wheel", onWheel);
-      window.removeEventListener("touchstart", onTouchStart);
-      window.removeEventListener("touchmove", onTouchMove);
-      window.removeEventListener("touchend", onTouchEnd);
     };
-  }, [rawX, rawY, rawScroll, reduced]);
+  }, [rawX, rawY, reduced]);
 
   // O texto é a camada mais "presa" da cena: só 6px de resposta ao mouse.
   const textX = useTransform(x, [-1, 1], reduced ? [0, 0] : [6, -6]);
   const pointerTextY = useTransform(y, [-1, 1], reduced ? [0, 0] : [6, -6]);
-  // Na roda ele sobe e sai de cena, deixando o bolo sozinho.
+  // Ao rolar ele sobe e sai de cena, deixando o bolo sozinho.
   const scrollTextY = useTransform(scroll, [0, 1], [0, -110]);
   const textY = useTransform(
     [pointerTextY, scrollTextY],
@@ -167,81 +152,94 @@ export default function Home() {
   return (
     <ThemeContext.Provider value={themeValue}>
       <PointerContext.Provider value={{ x, y, scroll, reduced }}>
-        <main
-          className="relative h-[100dvh] w-full overflow-hidden"
-          style={{
-            ...paletteVars(themeValue.theme),
-            backgroundColor: themeValue.theme.palette.bgTo,
-          }}
-        >
-          <BackgroundGlow />
-          <ThemeWord />
-
-          {/* Cada peça carrega seu próprio z-index (`depth`), então algumas
-              ficam atrás do bolo e outras cruzam na frente dele. */}
-          <FloatingPieces />
-
-          <HeroCake />
-          <DustMotes />
-
-          {/* ── Cabeçalho ────────────────────────────────────────────── */}
-          <motion.header
-            initial={{ opacity: 0, y: -14 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ ...spring, delay: 0.1 }}
-            className="absolute inset-x-0 top-0 z-40 flex items-center justify-between px-[5vw] py-5 transition-colors duration-700 lg:py-8"
-            style={{ color: "var(--ink)" }}
-          >
-            <a
-              href="#"
-              className="font-display text-[19px] font-bold tracking-[0.02em]"
+        <main>
+          {/* A pista da cena: 200vh de rolagem para 100vh de hero preso */}
+          <div ref={heroTrack} className="relative h-[200dvh]">
+            <section
+              className="sticky top-0 h-[100dvh] w-full overflow-hidden"
+              style={{
+                ...paletteVars(themeValue.theme),
+                backgroundColor: themeValue.theme.palette.bgTo,
+              }}
             >
-              Doce&nbsp;Memória
-              <span
-                className="transition-colors duration-700"
-                style={{ color: "var(--accent)" }}
+              <BackgroundGlow />
+              <ThemeWord />
+
+              {/* Cada peça carrega seu próprio z-index (`depth`), então
+                  algumas ficam atrás do bolo e outras cruzam na frente. */}
+              <FloatingPieces />
+
+              <HeroCake />
+              <DustMotes />
+
+              {/* ── Cabeçalho ──────────────────────────────────────── */}
+              <motion.header
+                initial={{ opacity: 0, y: -14 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ ...spring, delay: 0.1 }}
+                className="absolute inset-x-0 top-0 z-40 flex items-center justify-between px-[5vw] py-5 transition-colors duration-700 lg:py-8"
+                style={{ color: "var(--ink)" }}
               >
-                .
-              </span>
-            </a>
-
-            <nav className="hidden items-center gap-9 text-[13px] uppercase tracking-[0.16em] md:flex">
-              {["Bolos", "Encomendas", "Ateliê"].map((item) => (
                 <a
-                  key={item}
                   href="#"
-                  className="opacity-55 transition-opacity duration-500 hover:opacity-100"
+                  className="font-display text-[19px] font-bold tracking-[0.02em]"
                 >
-                  {item}
+                  Doce&nbsp;Memória
+                  <span
+                    className="transition-colors duration-700"
+                    style={{ color: "var(--accent)" }}
+                  >
+                    .
+                  </span>
                 </a>
-              ))}
-            </nav>
-          </motion.header>
 
-          {/* ── Coluna de texto, à direita do bolo ───────────────────── */}
-          {/* A camada de fora obedece à roda; a de dentro faz a entrada.
-              Juntas na mesma, as duas brigariam pela opacidade. */}
-          <motion.section
-            style={{ x: textX, y: textY, opacity: textOpacity }}
-            className="absolute left-[6vw] right-[6vw] top-[max(80px,11vh)] z-30 lg:left-auto lg:right-[5vw] lg:top-1/2 lg:w-[min(42vw,540px)] lg:-translate-y-1/2"
-          >
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ ...spring, delay: 0.25 }}
-            >
-              <CakeCopy />
-            </motion.div>
-          </motion.section>
+                <nav className="hidden items-center gap-9 text-[13px] uppercase tracking-[0.16em] md:flex">
+                  <a
+                    href="#cardapio"
+                    className="opacity-55 transition-opacity duration-500 hover:opacity-100"
+                  >
+                    Cardápio
+                  </a>
+                  {["Encomendas", "Ateliê"].map((item) => (
+                    <a
+                      key={item}
+                      href="#"
+                      className="opacity-55 transition-opacity duration-500 hover:opacity-100"
+                    >
+                      {item}
+                    </a>
+                  ))}
+                </nav>
+              </motion.header>
 
-          <ScrollReveal />
-          <ScrollHint />
+              {/* ── Coluna de texto, à direita do bolo ─────────────── */}
+              {/* A camada de fora obedece à rolagem; a de dentro faz a
+                  entrada. Juntas na mesma, brigariam pela opacidade. */}
+              <motion.section
+                style={{ x: textX, y: textY, opacity: textOpacity }}
+                className="absolute left-[6vw] right-[6vw] top-[max(80px,11vh)] z-30 lg:left-auto lg:right-[5vw] lg:top-1/2 lg:w-[min(42vw,540px)] lg:-translate-y-1/2"
+              >
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ ...spring, delay: 0.25 }}
+                >
+                  <CakeCopy />
+                </motion.div>
+              </motion.section>
 
-          {/* Grão de filme por cima de tudo: tira o "liso digital" da imagem */}
-          <div
-            aria-hidden
-            className="grain-overlay pointer-events-none absolute inset-0 z-50 opacity-[0.045]"
-          />
+              <ScrollReveal />
+              <ScrollHint />
+
+              {/* Grão de filme por cima de tudo: tira o "liso digital" */}
+              <div
+                aria-hidden
+                className="grain-overlay pointer-events-none absolute inset-0 z-50 opacity-[0.045]"
+              />
+            </section>
+          </div>
+
+          <MenuSection />
         </main>
       </PointerContext.Provider>
     </ThemeContext.Provider>
