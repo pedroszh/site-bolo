@@ -73,6 +73,7 @@ export const menu = {
             "Creme cítrico de acidez firme e merengue maçaricado na hora da entrega.",
           serves: "12 fatias",
           price: "R$ 195",
+          image: "/bolo-limao.png",
           tint: "#D9B45A",
         },
         {
@@ -81,6 +82,7 @@ export const menu = {
             "Doce de leite de tacho, nozes caramelizadas e uma pitada de flor de sal.",
           serves: "14 fatias",
           price: "R$ 230",
+          image: "/bolo-nozes.png",
           tint: "#B07B45",
         },
         {
@@ -89,6 +91,7 @@ export const menu = {
             "Massa aveludada de cacau e recheio de cream cheese pouco doce, do jeito clássico.",
           serves: "12 fatias",
           price: "R$ 215",
+          image: "/bolo-red.png",
           tint: "#A93B4A",
         },
       ] satisfies MenuItem[],
