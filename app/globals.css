@@ -138,11 +138,15 @@ body {
  * marca que ali começa outro assunto.
  */
 .menu-section {
-  --menu-bg: #f8f4ef;
-  --menu-ink: #2a1a16;
-  --menu-ink-soft: rgba(42, 26, 22, 0.62);
-  --menu-line: rgba(106, 71, 65, 0.2);
-  --menu-accent: #6a4741;
+  /* Campo escuro e quente: é onde as fotos de bolo vão morar, e recorte
+     com fundo claro perde o contorno. Quem dá cor à seção são os próprios
+     sabores, um por quadro. */
+  --menu-bg-from: #3a2622;
+  --menu-bg-to: #201310;
+  --menu-ink: #f5eadb;
+  --menu-ink-soft: rgba(245, 234, 219, 0.6);
+  --menu-line: rgba(245, 234, 219, 0.18);
+  --menu-accent: #e0b472;
 }
 
 /*

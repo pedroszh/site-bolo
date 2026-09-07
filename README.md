@@ -148,17 +148,35 @@ está o custo:
 
 ## Cardápio
 
-Uma seção comum, abaixo do hero — sem foto por enquanto, com a tipografia
-carregando: o nome do bolo puxa a linha, o pontilhado leva o olho até o
-preço, do jeito que cardápio impresso faz há um século. Duas colunas no
-desktop, uma no celular.
+Seis bolos em cards de três colunas (duas no tablet, uma no celular). Cada
+card tem um **quadro de foto** no topo, o nome puxando a linha, o
+pontilhado levando o olho até o preço e a porção embaixo.
 
-É um Server Component: nada ali precisa de estado nem de animação.
+### Publicar a foto de um bolo
+
+1. Gere o PNG recortado (com canal alpha) e jogue em `public/`.
+2. Escreva o caminho no campo `image` do item, em `data/menu.ts`.
+
+Só isso. O otimizador converte para WebP sozinho e o quadro já está no
+tamanho certo — a foto entra sem mexer no layout.
+
+**Enquanto a foto não existe, o quadro não fica vazio:** ele mostra um
+painel na cor do sabor (`tint`), com grão por cima e a mesma proporção que
+a imagem vai ocupar. É espaço reservado que já trabalha pela composição.
+
+### Cores e movimento
 
 A paleta é **fixa** (`.menu-section`, em `app/globals.css`) e de propósito:
 o hero troca de cor a cada seis segundos, e uma lista de preços piscando
-junto seria cansativa de ler. O corte de cor entre as duas seções também
-marca que ali começa outro assunto.
+junto seria cansativa de ler.
+
+O campo é escuro e quente porque é onde as fotos vão morar — recorte sobre
+fundo claro perde o contorno, sobre fundo escuro ele salta. Quem dá cor à
+seção são os próprios sabores, um por quadro.
+
+Cabeçalho, grupos e cards entram quando encostam na tela
+(`whileInView`, uma vez só), com os cards em cascata da esquerda para a
+direita — a mesma direção do wipe do hero. No hover, a foto cresce 4%.
 
 > **Os preços em `data/menu.ts` são de exemplo.** Troque pelos reais antes
 > de publicar.
