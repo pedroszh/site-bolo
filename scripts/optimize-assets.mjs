@@ -30,6 +30,72 @@ function maxWidthFor(name) {
   return name.includes("bolo") ? CAKE_MAX_WIDTH : PROP_MAX_WIDTH;
 }
 
+/**
+ * A imagem de compartilhamento — a prévia que aparece quando alguém
+ * manda o link do site no WhatsApp, no Instagram ou no Facebook.
+ *
+ * Para uma confeitaria isso pesa: o link circula em grupo de família e
+ * de bairro, e sem prévia ele vira um retângulo cinza. Aqui o bolo entra
+ * sobre o mesmo campo escuro e quente do cardápio.
+ *
+ * Troque `source` se quiser outro bolo na prévia.
+ */
+const OG = { source: "bolo-morango.png", width: 1200, height: 630 };
+
+async function buildOgImage() {
+  const src = path.join(PUBLIC, OG.source);
+  const dest = path.join(OUT, "og.jpg");
+
+  try {
+    await stat(src);
+  } catch {
+    console.log(`  aviso: ${OG.source} não existe — prévia não gerada`);
+    return false;
+  }
+  if ((await mtime(dest)) > (await mtime(src))) return false;
+
+  const bolo = await sharp(src)
+    .trim({ threshold: 1 })
+    .resize({ height: Math.round(OG.height * 0.84), fit: "inside" })
+    .toBuffer({ resolveWithObject: true });
+
+  const fundo = Buffer.from(
+    `<svg xmlns="http://www.w3.org/2000/svg" width="${OG.width}" height="${OG.height}">
+      <defs>
+        <linearGradient id="campo" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stop-color="#4a2f28"/>
+          <stop offset="58%" stop-color="#2a1a16"/>
+          <stop offset="100%" stop-color="#1c110e"/>
+        </linearGradient>
+        <radialGradient id="luz" cx="0.2" cy="0.08" r="0.85">
+          <stop offset="0%" stop-color="#e0b472" stop-opacity="0.3"/>
+          <stop offset="100%" stop-color="#e0b472" stop-opacity="0"/>
+        </radialGradient>
+      </defs>
+      <rect width="100%" height="100%" fill="url(#campo)"/>
+      <rect width="100%" height="100%" fill="url(#luz)"/>
+    </svg>`,
+  );
+
+  const out = await sharp(fundo)
+    .composite([
+      {
+        input: bolo.data,
+        left: Math.round((OG.width - bolo.info.width) / 2),
+        top: Math.round((OG.height - bolo.info.height) / 2),
+      },
+    ])
+    .jpeg({ quality: 86, mozjpeg: true })
+    .toBuffer();
+
+  await writeFile(dest, out);
+  console.log(
+    `  ${OG.source} → opt/og.jpg  ${OG.width}×${OG.height}  ` +
+      `prévia de compartilhamento  ${(out.length / 1024).toFixed(0)}kB`,
+  );
+  return true;
+}
+
 async function mtime(file) {
   try {
     return (await stat(file)).mtimeMs;
@@ -70,6 +136,8 @@ async function main() {
     );
     built += 1;
   }
+
+  if (await buildOgImage()) built += 1;
 
   console.log(built ? `assets: ${built} otimizado(s)` : "assets: em dia");
 }

@@ -3,6 +3,7 @@
 import { motion } from "framer-motion";
 import { menu, type MenuItem } from "@/data/menu";
 import { optimized } from "@/lib/assets";
+import { whatsappLink } from "@/data/site";
 
 /** Sobe e aparece. Usado no cabeçalho e em cada card. */
 const rise = {
@@ -240,7 +241,9 @@ export default function MenuSection() {
           </p>
 
           <motion.a
-            href="#orcamento"
+            href={whatsappLink()}
+            target="_blank"
+            rel="noopener noreferrer"
             whileHover={{ y: -3 }}
             whileTap={{ y: -1, scale: 0.985 }}
             transition={{ type: "spring", duration: 0.9, bounce: 0.24 }}

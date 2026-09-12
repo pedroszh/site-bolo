@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion";
 import { spring } from "@/lib/parallax";
+import { whatsappLink } from "@/data/site";
 
 /**
  * O par de chamadas para ação.
@@ -15,7 +16,9 @@ export default function CTAButtons() {
   return (
     <div className="flex flex-wrap items-center gap-3 lg:gap-4">
       <motion.a
-        href="#orcamento"
+        href={whatsappLink()}
+        target="_blank"
+        rel="noopener noreferrer"
         whileHover={{ y: -3 }}
         whileTap={{ y: -1, scale: 0.985 }}
         transition={spring}

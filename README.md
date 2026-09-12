@@ -181,6 +181,47 @@ direita — a mesma direção do wipe do hero. No hover, a foto cresce 4%.
 > **Os preços em `data/menu.ts` são de exemplo.** Troque pelos reais antes
 > de publicar.
 
+## Preparar o site para um cliente
+
+Tudo que é do negócio mora em **[`data/site.ts`](data/site.ts)** — nome,
+descrição, endereço, telefone, WhatsApp, horário. É o único arquivo que
+muda de um cliente para outro. Dali saem:
+
+- o título da aba e o que aparece no Google
+- a descrição do resultado da busca
+- a prévia do link no WhatsApp (imagem, título e texto)
+- o destino do botão "Fazer orçamento"
+- o `sitemap.xml` e o `robots.txt`
+- os dados estruturados que o Google usa para mostrar endereço, horário e
+  telefone ao lado do resultado
+
+### Passo a passo do lançamento
+
+1. **Preencher `data/site.ts`.** Tudo marcado com TROCAR. O campo `url`
+   precisa ser o endereço final, senão o sitemap aponta para o lugar
+   errado e o Google não indexa.
+2. **Trocar o conteúdo:** sabores em `data/themes.ts`, cardápio em
+   `data/menu.ts`, textos da segunda cena em `data/reveal.ts`.
+3. **Publicar** (Netlify, Cloudflare Pages ou Vercel Pro — o plano grátis
+   da Vercel é só para uso pessoal, não serve para site de cliente).
+4. **Search Console:** search.google.com/search-console → Adicionar
+   propriedade → Prefixo do URL → verificação por Tag HTML. Copie só o
+   conteúdo do `content` para `googleVerification`, publique de novo e
+   clique em Verificar.
+5. **Enviar o sitemap** no Search Console: `sitemap.xml`.
+6. **Solicitar indexação** em Inspeção de URL.
+7. **Perfil da Empresa no Google** (o do Maps) — o dono do negócio cria
+   com a conta dele e passa o link para o campo `mapsUrl`.
+
+Indexar leva de dias a semanas. Posicionar bem em busca concorrida leva
+meses. Prometer "primeira página do Google" é criar cliente insatisfeito.
+
+### Conferir se ficou certo
+
+- prévia do WhatsApp: developers.facebook.com/tools/debug
+- dados estruturados: search.google.com/test/rich-results
+- desempenho e acessibilidade: PageSpeed Insights
+
 ## Sobre os assets
 
 - **Os bolos precisam ser PNG recortado, com canal alpha.** É o caso de
