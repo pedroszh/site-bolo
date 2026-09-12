@@ -8,3 +8,6 @@ next-env.d.ts
 
 # WebP gerado por scripts/optimize-assets.mjs
 public/opt/
+
+# Material comercial — não vai para o repositório público
+proposta/
