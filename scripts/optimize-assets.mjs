@@ -1,5 +1,5 @@
 /**
- * Prepara os PNGs de /public para a web.
+ * Prepara os PNGs originais para a web.
  *
  * Os originais são grandes demais para um hero: a foto do bolo chega a 2,4 MB,
  * e o navegador precisa decodificar isso antes do primeiro quadro. O script
@@ -12,8 +12,14 @@ import { mkdir, readdir, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
 import sharp from "sharp";
 
-const PUBLIC = "public";
-const OUT = path.join(PUBLIC, "opt");
+/*
+ * Os PNGs originais moram fora de `public/` de propósito: o que está em
+ * `public/` vai inteiro para o site publicado, e ninguém precisa baixar
+ * 19 MB de PNG quando o site só usa os WebP. Aqui entra o original, ali
+ * sai a versão da web.
+ */
+const SOURCE = "assets-src";
+const OUT = path.join("public", "opt");
 
 /**
  * Largura máxima de saída.
@@ -43,7 +49,7 @@ function maxWidthFor(name) {
 const OG = { source: "bolo-morango.png", width: 1200, height: 630 };
 
 async function buildOgImage() {
-  const src = path.join(PUBLIC, OG.source);
+  const src = path.join(SOURCE, OG.source);
   const dest = path.join(OUT, "og.jpg");
 
   try {
@@ -107,12 +113,12 @@ async function mtime(file) {
 async function main() {
   await mkdir(OUT, { recursive: true });
 
-  const files = (await readdir(PUBLIC)).filter((f) => f.endsWith(".png"));
+  const files = (await readdir(SOURCE)).filter((f) => f.endsWith(".png"));
   let built = 0;
 
   for (const file of files) {
     const name = path.basename(file, ".png");
-    const src = path.join(PUBLIC, file);
+    const src = path.join(SOURCE, file);
     const dest = path.join(OUT, `${name}.webp`);
 
     if ((await mtime(dest)) > (await mtime(src))) continue;

@@ -1,0 +1,38 @@
+# Configuração de publicação na Netlify.
+#
+# O site é 100% estático: `npm run build` gera a pasta `out/` com HTML,
+# CSS, JS e imagens prontos. Não há servidor, banco de dados nem função
+# rodando — é só arquivo sendo servido, o que torna a publicação barata,
+# rápida e difícil de quebrar.
+
+[build]
+  command = "npm run build"
+  publish = "out"
+
+[build.environment]
+  # O Next 16 exige Node 20.9 ou mais novo. Fixar a versão evita o build
+  # quebrar sozinho no dia em que a Netlify mudar o padrão dela.
+  NODE_VERSION = "22"
+
+# Os arquivos de `_next/static` têm o conteúdo no próprio nome: quando
+# mudam, mudam de nome. Podem ficar no cache para sempre.
+[[headers]]
+  for = "/_next/static/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+# As imagens mantêm o nome quando trocadas (uma foto de bolo nova entra
+# no lugar da antiga), então cache de um dia — o suficiente para ser
+# rápido sem deixar foto velha na tela de quem já visitou.
+[[headers]]
+  for = "/opt/*"
+  [headers.values]
+    Cache-Control = "public, max-age=86400"
+
+# Proteções básicas de navegador.
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    X-Frame-Options = "SAMEORIGIN"

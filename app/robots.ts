@@ -2,6 +2,13 @@ import type { MetadataRoute } from "next";
 import { site } from "@/data/site";
 
 /**
+ * Sem estado e sem servidor: o arquivo é gerado uma vez, no build.
+ * É o que a exportação estática exige.
+ */
+export const dynamic = "force-static";
+
+
+/**
  * Gera o /robots.txt.
  *
  * Diz aos buscadores que podem ler o site inteiro e onde fica o mapa

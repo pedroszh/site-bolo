@@ -17,15 +17,30 @@ rodízio de cores.
 ```bash
 npm install
 npm run dev      # http://localhost:3000
-npm run build
+npm run build    # gera a pasta out/, pronta para publicar
 ```
+
+O site é **100% estático**: o build produz HTML, CSS, JS e imagens
+prontos em `out/`. Não há servidor, banco nem função rodando — dá para
+publicar em qualquer lugar que sirva arquivo (Netlify, Cloudflare Pages,
+GitHub Pages) e é praticamente impossível de cair.
+
+## Publicar na Netlify
+
+1. **app.netlify.com** → Add new site → Import an existing project
+2. Conecte o GitHub e escolha o repositório
+3. **Não mexa em nada** — o `netlify.toml` já traz comando, pasta de
+   saída, versão do Node e cabeçalhos
+4. Deploy
+
+Cada `git push` no `main` republica sozinho.
 
 ## Adicionar um bolo novo
 
-1. Jogue o PNG recortado (com canal alpha) em `public/`, com nome
+1. Jogue o PNG recortado (com canal alpha) em **`assets-src/`**, com nome
    começando em `bolo-` — é assim que o otimizador sabe que é bolo e o
    manda para 1100 px em vez do tamanho de enfeite.
-2. Jogue os enfeites do sabor em `public/` também, com qualquer nome.
+2. Jogue os enfeites do sabor em `assets-src/` também, com qualquer nome.
 3. Copie um bloco em [`data/themes.ts`](data/themes.ts), troque a foto, os
    enfeites, a paleta e o texto.
 
@@ -137,9 +152,14 @@ está o custo:
   zero trabalho por quadro. O Framer Motion cuida só do que precisa de
   estado: parallax, roda, entrada e troca de sabor.
 - **As imagens passam por um otimizador.** `scripts/optimize-assets.mjs`
-  apara a margem transparente, redimensiona e grava WebP em `public/opt`
-  (roda sozinho antes de `dev` e `build`). Os 8,7 MB de PNG viram ~1 MB.
-  Se trocar uma imagem, reinicie o dev — ele regera só o que mudou.
+  lê os PNGs originais de `assets-src/`, apara a margem transparente,
+  redimensiona e grava WebP em `public/opt` (roda sozinho antes de `dev` e
+  `build`). Se trocar uma imagem, reinicie o dev — ele regera só o que
+  mudou.
+- **Os originais moram fora de `public/` de propósito.** Tudo que está em
+  `public/` vai inteiro para o site publicado, e ninguém precisa baixar
+  19 MB de PNG quando o site só usa os WebP. Com os originais fora, o
+  site publicado caiu de 20 MB para 3 MB.
 - **Nada de `backdrop-blur`, `mix-blend-mode` ou `drop-shadow` de raio
   alto** em elemento animado: são os filtros que forçam o navegador a
   redesenhar a cada quadro. As sombras grandes são gradientes.
@@ -154,7 +174,7 @@ pontilhado levando o olho até o preço e a porção embaixo.
 
 ### Publicar a foto de um bolo
 
-1. Gere o PNG recortado (com canal alpha) e jogue em `public/`.
+1. Gere o PNG recortado (com canal alpha) e jogue em `assets-src/`.
 2. Escreva o caminho no campo `image` do item, em `data/menu.ts`.
 
 Só isso. O otimizador converte para WebP sozinho e o quadro já está no
